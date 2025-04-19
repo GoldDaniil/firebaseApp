@@ -10,6 +10,7 @@ import androidx.navigation.compose.*
 import com.example.firebaseapp.ui.theme.FirebaseAppTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.ui.Modifier
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,18 +20,21 @@ class MainActivity : ComponentActivity() {
         setContent {
             FirebaseAppTheme {
                 val navController = rememberNavController()
+                val user = FirebaseAuth.getInstance().currentUser
 
                 Scaffold(
-                    bottomBar = { BottomNavigationBar(navController) }
+                    bottomBar = { BottomNavigationBar(navController, user) }
                 ) { paddingValues ->
                     NavHost(
                         navController = navController,
-                        startDestination = "login",
+                        startDestination = if (user == null) "login" else "welcome",
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         composable("login") { LoginScreen(navController) }
                         composable("register") { RegisterScreen(navController) }
                         composable("welcome") { WelcomeScreen(navController) }
+                        composable("center") { CenterScreen() }
+                        composable("messenger") { MessengerScreen() }
                     }
                 }
             }
