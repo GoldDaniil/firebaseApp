@@ -54,6 +54,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx:22.3.0")
     implementation("androidx.navigation:navigation-compose:2.5.3")
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("androidx.compose.material:material-icons-extended:1.6.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
