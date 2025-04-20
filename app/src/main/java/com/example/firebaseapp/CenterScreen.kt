@@ -21,6 +21,8 @@ fun CenterScreen() {
 
     var center by remember { mutableStateOf<VolunteerCenter?>(null) }
     var usersCount by remember { mutableStateOf(0) }
+    var usersList by remember { mutableStateOf<List<UserProfile>>(emptyList()) }
+    var isUserListVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (user != null) {
@@ -40,6 +42,16 @@ fun CenterScreen() {
                                     .get()
                                     .addOnSuccessListener { result ->
                                         usersCount = result.size()
+                                    }
+
+                                // Получаем список пользователей
+                                firestore.collection("users")
+                                    .whereEqualTo("centerId", centerId)
+                                    .get()
+                                    .addOnSuccessListener { result ->
+                                        usersList = result.documents.mapNotNull { document ->
+                                            document.toObject(UserProfile::class.java)
+                                        }
                                     }
                             }
                     }
@@ -72,6 +84,26 @@ fun CenterScreen() {
                     Text("Поддержка: ${center!!.supporters}")
                     Spacer(Modifier.height(8.dp))
                     Text("Количество пользователей: $usersCount")
+                    Spacer(Modifier.height(8.dp))
+
+                    // Кнопка для показа списка пользователей
+                    Button(
+                        onClick = { isUserListVisible = !isUserListVisible },
+                        modifier = Modifier.padding(top = 16.dp)
+                    ) {
+                        Text(if (isUserListVisible) "Скрыть список пользователей" else "Показать список пользователей")
+                    }
+
+                    // Отображаем список пользователей, если флаг isUserListVisible == true
+                    if (isUserListVisible) {
+                        Spacer(Modifier.height(16.dp))
+                        Column {
+                            usersList.forEach { user ->
+                                Text("Почта: ${user.email}, Никнейм: ${user.nickname}")
+                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
