@@ -5,5 +5,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun CenterScreen() {
-    Text("Мессенджер (страница пустая)")
+    Text("adsdsaadsasdasdads (страница пустая)")
 }
