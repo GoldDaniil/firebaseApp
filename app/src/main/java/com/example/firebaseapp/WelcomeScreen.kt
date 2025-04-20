@@ -22,6 +22,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 
 data class UserProfile(
     val email: String = "",
@@ -65,7 +68,6 @@ fun WelcomeScreen(navController: NavController) {
             .addOnSuccessListener { result ->
                 centers = result.documents.mapNotNull { it.toObject(VolunteerCenter::class.java) }
 
-                // После загрузки центров — загружаем профиль
                 firestore.collection("users").document(user.uid)
                     .get()
                     .addOnSuccessListener { document ->
@@ -80,29 +82,6 @@ fun WelcomeScreen(navController: NavController) {
                         }
                     }
             }
-    }
-
-    LaunchedEffect(user.uid) {
-        firestore.collection("users").document(user.uid)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    profile = document.toObject(UserProfile::class.java)
-                    selectedCenter = centers.find { it.id == profile?.centerId }
-                    selectedAvatar = profile?.avatarRes ?: "black"
-                } else {
-                    val newProfile = UserProfile(email = user.email ?: "")
-                    firestore.collection("users").document(user.uid).set(newProfile)
-                    profile = newProfile
-                }
-            }
-    }
-
-    if (profile == null) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        return
     }
 
     Scaffold(
@@ -132,26 +111,27 @@ fun WelcomeScreen(navController: NavController) {
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            val avatarResId = when (profile!!.avatarRes) {
-                "black" -> R.drawable.black
-                "blue" -> R.drawable.blue
-                "reg" -> R.drawable.reg
-                "yellowjpg" -> R.drawable.yellowjpg
-                else -> R.drawable.black
-            }
+            profile?.let {
+                val avatarResId = when (it.avatarRes) {
+                    "black" -> R.drawable.black
+                    "blue" -> R.drawable.blue
+                    "reg" -> R.drawable.reg
+                    "yellowjpg" -> R.drawable.yellowjpg
+                    else -> R.drawable.black
+                }
 
-            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Image(
-                    painter = painterResource(id = avatarResId),
-                    contentDescription = "Avatar",
-                    modifier = Modifier
-                        .size(120.dp)
-                        .padding(8.dp)
-                        .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                )
-            }
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Image(
+                        painter = painterResource(id = avatarResId),
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(8.dp)
+                            .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
             ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp)) {
@@ -176,13 +156,46 @@ fun WelcomeScreen(navController: NavController) {
                     label = { Text("О себе") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                var expanded by remember { mutableStateOf(false) }
+                val statusOptions = listOf("Активный", "Неактивный")
+
+                Text("Статус", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = editableStatus,
-                    onValueChange = { editableStatus = it },
-                    label = { Text("Статус") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded }
+                ) {
+                    OutlinedTextField(
+                        value = editableStatus,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Статус") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        statusOptions.forEach { selectionOption ->
+                            DropdownMenuItem(
+                                text = { Text(selectionOption) },
+                                onClick = {
+                                    editableStatus = selectionOption
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 Spacer(Modifier.height(16.dp))
 
                 Text("Выберите волонтёрский центр:", style = MaterialTheme.typography.titleMedium)
@@ -236,42 +249,68 @@ fun WelcomeScreen(navController: NavController) {
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.height(24.dp))
 
-                Row(horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Button(onClick = {
-                        val updatedProfile = profile!!.copy(
-                            nickname = editableNickname,
-                            bio = editableBio,
-                            status = editableStatus,
-                            centerId = selectedCenter?.id ?: "",
-                            avatarRes = selectedAvatar
-                        )
-                        firestore.collection("users").document(user.uid).set(updatedProfile)
-                        profile = updatedProfile
-                        isEditing = false
-                    }) {
-                        Text("Сохранить")
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly) {
+                        Button(onClick = {
+                            val updatedProfile = profile!!.copy(
+                                nickname = editableNickname,
+                                bio = editableBio,
+                                status = editableStatus,
+                                centerId = selectedCenter?.id ?: "",
+                                avatarRes = selectedAvatar
+                            )
+                            firestore.collection("users").document(user.uid).set(updatedProfile)
+                            profile = updatedProfile
+                            isEditing = false
+                        }) {
+                            Text("Сохранить")
+                        }
+
+                        OutlinedButton(onClick = { isEditing = false }) {
+                            Text("Отмена")
+                        }
+                    }
+                } else {
+                    ElevatedCard(Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text("Почта", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(it.email, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Никнейм", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(it.nickname, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("О себе", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(it.bio, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Статус", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(it.status, style = MaterialTheme.typography.bodyLarge)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Центр", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                            Text(selectedCenter?.name ?: "Не выбран", style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
 
-                    OutlinedButton(onClick = { isEditing = false }) {
-                        Text("Отмена")
-                    }
-                }
-            } else {
-                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Никнейм", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text(profile!!.nickname, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.height(8.dp))
-                        Text("О себе", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text(profile!!.bio, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.height(8.dp))
-                        Text("Статус", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text(profile!!.status, style = MaterialTheme.typography.bodyLarge)
-                        Spacer(Modifier.height(8.dp))
-                        Text("Центр", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                        Text(selectedCenter?.name ?: "Не выбран", style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(24.dp))
+                    // 🔥 ВСТАВКА: две кнопки
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        Button(onClick = {
+                            navController.navigate("center")
+                        }) {
+                            Text("Перейти к центру")
+                        }
+
+                        Button(onClick = {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }) {
+                            Text("Выйти")
+                        }
                     }
                 }
             }
