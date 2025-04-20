@@ -20,14 +20,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             FirebaseAppTheme {
                 val navController = rememberNavController()
-                val user = FirebaseAuth.getInstance().currentUser
+                val auth = FirebaseAuth.getInstance()
+                val userState = remember { mutableStateOf(auth.currentUser) }
+
+                // Слушатель изменений авторизации
+                DisposableEffect(Unit) {
+                    val listener = FirebaseAuth.AuthStateListener {
+                        userState.value = it.currentUser
+                    }
+                    auth.addAuthStateListener(listener)
+                    onDispose {
+                        auth.removeAuthStateListener(listener)
+                    }
+                }
 
                 Scaffold(
-                    bottomBar = { BottomNavigationBar(navController, user) }
+                    bottomBar = { BottomNavigationBar(navController, userState.value) }
                 ) { paddingValues ->
                     NavHost(
                         navController = navController,
-                        startDestination = if (user == null) "login" else "welcome",
+                        startDestination = if (userState.value == null) "login" else "welcome",
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         composable("login") { LoginScreen(navController) }
