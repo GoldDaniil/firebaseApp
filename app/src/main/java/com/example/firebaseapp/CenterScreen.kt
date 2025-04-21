@@ -1,6 +1,7 @@
 package com.example.firebaseapp
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +21,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 
 @Composable
@@ -170,7 +172,7 @@ fun CenterScreen() {
                                     id = UUID.randomUUID().toString(),
                                     title = newTaskTitle,
                                     description = newTaskDescription,
-                                    isCompleted = false,
+                                    isCompleted = false,  // ← гарантируем создание с false
                                     solution = ""
                                 )
                                 firestore.collection("centers").document(center!!.id)
@@ -191,30 +193,36 @@ fun CenterScreen() {
     }
 }
 
+
+
+
 @Composable
-fun TaskCard(centerId: String, task: Task, firestore: FirebaseFirestore, showCompleted: Boolean) {
+fun TaskCard(
+    centerId: String,
+    task: Task,
+    firestore: FirebaseFirestore,
+    showCompleted: Boolean
+) {
     var solutionText by remember { mutableStateOf("") }
-    var showSolutionField by remember { mutableStateOf(false) }
-    var isTaskCompleted by remember { mutableStateOf(task.isCompleted) }
+    val context = LocalContext.current
 
     Card(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("Название: ${task.title}", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
-            Text("Описание: ${task.description}")
+            Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
+            Text(task.description)
 
-            if (isTaskCompleted) {
-                Text("Решение: ${task.solution}", fontWeight = FontWeight.SemiBold)
+            if (task.isCompleted) {
                 Spacer(Modifier.height(8.dp))
-            }
-
-            if (showSolutionField) {
+                Text("Решение: ${task.solution}", fontWeight = FontWeight.SemiBold)
+                Text("✅ Выполнено", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+            } else if (!showCompleted) {
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = solutionText,
                     onValueChange = { solutionText = it },
@@ -222,55 +230,30 @@ fun TaskCard(centerId: String, task: Task, firestore: FirebaseFirestore, showCom
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
-
-                Row {
-                    Button(onClick = {
+                Button(
+                    onClick = {
                         if (solutionText.isNotBlank()) {
                             val updatedTask = task.copy(
                                 isCompleted = true,
                                 solution = solutionText
                             )
-                            firestore.collection("centers").document(centerId)
-                                .collection("tasks").document(task.id)
+                            firestore.collection("centers")
+                                .document(centerId)
+                                .collection("tasks")
+                                .document(task.id)
                                 .set(updatedTask)
                                 .addOnSuccessListener {
-                                    isTaskCompleted = true
-                                    showSolutionField = false
-                                    solutionText = ""
+                                    Toast.makeText(context, "Задача отмечена как выполненная", Toast.LENGTH_SHORT).show()
                                 }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Ошибка при сохранении", Toast.LENGTH_SHORT).show()
+                                }
+                        } else {
+                            Toast.makeText(context, "Введите решение перед отправкой", Toast.LENGTH_SHORT).show()
                         }
-                    }) {
-                        Text("Отправить")
                     }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(onClick = {
-                        showSolutionField = false
-                        solutionText = ""
-                    }) {
-                        Text("Отмена")
-                    }
-                }
-            } else {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(onClick = {
-                        showSolutionField = true
-                    }) {
-                        Text("Сделано")
-                    }
-
-                    // Пометка "Выполнено" после отправки решения
-                    if (isTaskCompleted) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "✓ Выполнено",
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text("Сделано ✅")
                 }
             }
         }
