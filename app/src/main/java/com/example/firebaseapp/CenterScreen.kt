@@ -18,6 +18,9 @@ import com.example.firebaseapp.data.VolunteerCenter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.ui.text.font.FontWeight
 
 @Composable
 fun CenterScreen() {
@@ -192,6 +195,7 @@ fun CenterScreen() {
 fun TaskCard(centerId: String, task: Task, firestore: FirebaseFirestore, showCompleted: Boolean) {
     var solutionText by remember { mutableStateOf("") }
     var showSolutionField by remember { mutableStateOf(false) }
+    var isTaskCompleted by remember { mutableStateOf(task.isCompleted) }
 
     Card(
         Modifier
@@ -203,53 +207,69 @@ fun TaskCard(centerId: String, task: Task, firestore: FirebaseFirestore, showCom
             Text("Название: ${task.title}", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
             Text("Описание: ${task.description}")
+            Spacer(Modifier.height(8.dp))
 
-            // Если задача выполнена, показываем решение и скрываем задачу из текущих
-            if (task.isCompleted) {
+            if (isTaskCompleted) {
+                Text("Решение: ${task.solution}", fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
-                Text("Решение: ${task.solution}")
-            } else {
+            }
+
+            if (showSolutionField) {
+                OutlinedTextField(
+                    value = solutionText,
+                    onValueChange = { solutionText = it },
+                    label = { Text("Введите решение") },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(8.dp))
-                if (showSolutionField) {
-                    OutlinedTextField(
-                        value = solutionText,
-                        onValueChange = { solutionText = it },
-                        label = { Text("Введите решение") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Row {
-                        Button(onClick = {
-                            if (solutionText.isNotBlank()) {
-                                val updatedTask = task.copy(
-                                    isCompleted = true,
-                                    solution = solutionText
-                                )
-                                firestore.collection("centers").document(centerId)
-                                    .collection("tasks").document(task.id)
-                                    .set(updatedTask)
-                                    .addOnSuccessListener {
-                                        showSolutionField = false
-                                        solutionText = ""
-                                    }
-                            }
-                        }) {
-                            Text("Отправить")
+
+                Row {
+                    Button(onClick = {
+                        if (solutionText.isNotBlank()) {
+                            val updatedTask = task.copy(
+                                isCompleted = true,
+                                solution = solutionText
+                            )
+                            firestore.collection("centers").document(centerId)
+                                .collection("tasks").document(task.id)
+                                .set(updatedTask)
+                                .addOnSuccessListener {
+                                    isTaskCompleted = true
+                                    showSolutionField = false
+                                    solutionText = ""
+                                }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = {
-                            // Отменяем ввод
-                            showSolutionField = false
-                            solutionText = ""
-                        }) {
-                            Text("Отмена")
-                        }
+                    }) {
+                        Text("Отправить")
                     }
-                } else {
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Button(onClick = {
+                        showSolutionField = false
+                        solutionText = ""
+                    }) {
+                        Text("Отмена")
+                    }
+                }
+            } else {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Button(onClick = {
                         showSolutionField = true
                     }) {
                         Text("Сделано")
+                    }
+
+                    // Пометка "Выполнено" после отправки решения
+                    if (isTaskCompleted) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "✓ Выполнено",
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
