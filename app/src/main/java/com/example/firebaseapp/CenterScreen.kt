@@ -2,6 +2,7 @@ package com.example.firebaseapp
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -22,8 +23,9 @@ import java.util.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-
+import androidx.compose.ui.unit.sp
 
 
 @Composable
@@ -202,7 +204,6 @@ fun CenterScreen() {
         }
     }
 }
-
 @Composable
 fun TaskCard(
     centerId: String,
@@ -222,72 +223,105 @@ fun TaskCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
+            // Добавляем строку с состоянием задачи
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.width(8.dp))
+                if (task.isSolutionSent && !task.isCompleted) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .background(Color(0xFFFFA000), shape = RoundedCornerShape(4.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            "Решение отправлено",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(task.description)
 
-            if (task.isCompleted) {
-                Spacer(Modifier.height(8.dp))
-                Text("Решение: ${task.solution}", fontWeight = FontWeight.SemiBold)
-                Text("✅ Выполнено", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
-            } else if (!showCompleted) {
-                Spacer(Modifier.height(8.dp))
-
-                if (isSolutionFieldVisible) {
-                    OutlinedTextField(
-                        value = solutionText,
-                        onValueChange = { solutionText = it },
-                        label = { Text("Введите решение") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            when {
+                task.isCompleted -> {
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = {
-                        if (solutionText.isNotBlank()) {
-                            val updatedTask = task.copy(
-                                solution = solutionText,
-                                isSolutionSent = true
+                    Text("Решение: ${task.solution}", fontWeight = FontWeight.SemiBold)
+                    Text("✅ Выполнено", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                }
+                !showCompleted -> {
+                    Spacer(Modifier.height(8.dp))
+
+                    if (task.isSolutionSent) {
+                        Column {
+                            // Показываем отправленное решение
+                            Text(
+                                "Ваше решение: ${task.solution}",
+                                fontStyle =     FontStyle.Italic,
+                                color = Color.Gray
                             )
-                            firestore.collection("centers")
-                                .document(centerId)
-                                .collection("tasks")
-                                .document(task.id)
-                                .set(updatedTask)
-                                .addOnSuccessListener {
-                                    Toast.makeText(context, "Решение отправлено", Toast.LENGTH_SHORT).show()
-                                    onTaskUpdated(updatedTask)
-                                    isSolutionFieldVisible = false
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Ошибка при отправке", Toast.LENGTH_SHORT).show()
-                                }
+                            Spacer(Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    val completedTask = task.copy(isCompleted = true)
+                                    firestore.collection("centers")
+                                        .document(centerId)
+                                        .collection("tasks")
+                                        .document(task.id)
+                                        .set(completedTask)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Задача выполнена!", Toast.LENGTH_SHORT).show()
+                                            onTaskUpdated(completedTask)
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(context, "Ошибка", Toast.LENGTH_SHORT).show()
+                                        }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4CAF50),
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("Подтвердить выполнение")
+                            }
                         }
-                    }) {
-                        Text("Отправить решение")
-                    }
-                } else {
-                    if (!task.isSolutionSent) {
-                        Button(onClick = { isSolutionFieldVisible = true }) {
-                            Text("Пометить выполненным")
-                        }
-                    }
-                    // Показываем кнопку "Сделано ✅", если решение отправлено
-                    if (task.isSolutionSent && !task.isCompleted) {
-                        Button(onClick = {
-                            val completedTask = task.copy(isCompleted = true)
-                            firestore.collection("centers")
-                                .document(centerId)
-                                .collection("tasks")
-                                .document(task.id)
-                                .set(completedTask)
-                                .addOnSuccessListener {
-                                    Toast.makeText(context, "Задача отмечена как выполненная", Toast.LENGTH_SHORT).show()
-                                    onTaskUpdated(completedTask)
+                    } else {
+                        if (isSolutionFieldVisible) {
+                            OutlinedTextField(
+                                value = solutionText,
+                                onValueChange = { solutionText = it },
+                                label = { Text("Ваше решение") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Button(onClick = {
+                                if (solutionText.isNotBlank()) {
+                                    val updatedTask = task.copy(
+                                        solution = solutionText,
+                                        isSolutionSent = true
+                                    )
+                                    firestore.collection("centers")
+                                        .document(centerId)
+                                        .collection("tasks")
+                                        .document(task.id)
+                                        .set(updatedTask)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(context, "Решение отправлено!", Toast.LENGTH_SHORT).show()
+                                            onTaskUpdated(updatedTask)
+                                            isSolutionFieldVisible = false
+                                        }
                                 }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, "Ошибка при сохранении", Toast.LENGTH_SHORT).show()
-                                }
-                        }) {
-                            Text("Сделано ✅")
+                            }) {
+                                Text("Отправить решение")
+                            }
+                        } else {
+                            Button(onClick = { isSolutionFieldVisible = true }) {
+                                Text("Пометить выполненным")
+                            }
                         }
                     }
                 }
