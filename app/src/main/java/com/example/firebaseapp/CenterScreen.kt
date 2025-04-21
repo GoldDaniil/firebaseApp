@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 
+
+
 @Composable
 fun CenterScreen() {
     val user = FirebaseAuth.getInstance().currentUser
@@ -80,6 +82,10 @@ fun CenterScreen() {
         }
     }
 
+    fun updateTask(updatedTask: Task) {
+        tasks = tasks.map { if (it.id == updatedTask.id) updatedTask else it }
+    }
+
     if (center == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("Центр не выбран или не найден")
@@ -109,7 +115,7 @@ fun CenterScreen() {
 
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { isUserListVisible = !isUserListVisible }) {
-                        Text(if (isUserListVisible) "Скрыть пользователей" else "Показать список пользователей")
+                        Text(if (isUserListVisible) "Скрыть пользователей" else "Показать пользователей")
                     }
 
                     if (isUserListVisible) {
@@ -127,7 +133,7 @@ fun CenterScreen() {
                     Spacer(Modifier.height(16.dp))
                     Row {
                         Button(onClick = { showCompleted = false }) {
-                            Text("Показать задачи")
+                            Text("Задачи")
                         }
                         Spacer(Modifier.width(8.dp))
                         Button(onClick = { showCompleted = true }) {
@@ -141,7 +147,13 @@ fun CenterScreen() {
                         Text("Задач пока нет.")
                     } else {
                         filteredTasks.forEach { task ->
-                            TaskCard(centerId = center!!.id, task = task, firestore = firestore, showCompleted = showCompleted)
+                            TaskCard(
+                                centerId = center!!.id,
+                                task = task,
+                                firestore = firestore,
+                                showCompleted = showCompleted,
+                                onTaskUpdated = { updatedTask -> updateTask(updatedTask) }
+                            )
                         }
                     }
 
@@ -171,9 +183,7 @@ fun CenterScreen() {
                                 val newTask = Task(
                                     id = UUID.randomUUID().toString(),
                                     title = newTaskTitle,
-                                    description = newTaskDescription,
-                                    isCompleted = false,  // ← гарантируем создание с false
-                                    solution = ""
+                                    description = newTaskDescription
                                 )
                                 firestore.collection("centers").document(center!!.id)
                                     .collection("tasks").document(newTask.id)
@@ -193,17 +203,16 @@ fun CenterScreen() {
     }
 }
 
-
-
-
 @Composable
 fun TaskCard(
     centerId: String,
     task: Task,
     firestore: FirebaseFirestore,
-    showCompleted: Boolean
+    showCompleted: Boolean,
+    onTaskUpdated: (Task) -> Unit
 ) {
     var solutionText by remember { mutableStateOf("") }
+    var isSolutionFieldVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Card(
@@ -214,7 +223,7 @@ fun TaskCard(
     ) {
         Column(Modifier.padding(16.dp)) {
             Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(task.description)
 
             if (task.isCompleted) {
@@ -223,19 +232,20 @@ fun TaskCard(
                 Text("✅ Выполнено", color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
             } else if (!showCompleted) {
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = solutionText,
-                    onValueChange = { solutionText = it },
-                    label = { Text("Введите решение") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = {
+
+                if (isSolutionFieldVisible) {
+                    OutlinedTextField(
+                        value = solutionText,
+                        onValueChange = { solutionText = it },
+                        label = { Text("Введите решение") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Button(onClick = {
                         if (solutionText.isNotBlank()) {
                             val updatedTask = task.copy(
-                                isCompleted = true,
-                                solution = solutionText
+                                solution = solutionText,
+                                isSolutionSent = true
                             )
                             firestore.collection("centers")
                                 .document(centerId)
@@ -243,17 +253,43 @@ fun TaskCard(
                                 .document(task.id)
                                 .set(updatedTask)
                                 .addOnSuccessListener {
+                                    Toast.makeText(context, "Решение отправлено", Toast.LENGTH_SHORT).show()
+                                    onTaskUpdated(updatedTask)
+                                    isSolutionFieldVisible = false
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Ошибка при отправке", Toast.LENGTH_SHORT).show()
+                                }
+                        }
+                    }) {
+                        Text("Отправить решение")
+                    }
+                } else {
+                    if (!task.isSolutionSent) {
+                        Button(onClick = { isSolutionFieldVisible = true }) {
+                            Text("Пометить выполненным")
+                        }
+                    }
+                    // Показываем кнопку "Сделано ✅", если решение отправлено
+                    if (task.isSolutionSent && !task.isCompleted) {
+                        Button(onClick = {
+                            val completedTask = task.copy(isCompleted = true)
+                            firestore.collection("centers")
+                                .document(centerId)
+                                .collection("tasks")
+                                .document(task.id)
+                                .set(completedTask)
+                                .addOnSuccessListener {
                                     Toast.makeText(context, "Задача отмечена как выполненная", Toast.LENGTH_SHORT).show()
+                                    onTaskUpdated(completedTask)
                                 }
                                 .addOnFailureListener {
                                     Toast.makeText(context, "Ошибка при сохранении", Toast.LENGTH_SHORT).show()
                                 }
-                        } else {
-                            Toast.makeText(context, "Введите решение перед отправкой", Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text("Сделано ✅")
                         }
                     }
-                ) {
-                    Text("Сделано ✅")
                 }
             }
         }
