@@ -45,7 +45,17 @@ class MainActivity : ComponentActivity() {
                         composable("register") { RegisterScreen(navController) }
                         composable("welcome") { WelcomeScreen(navController) }
                         composable("center") { CenterScreen() }
-                        composable("messenger") { MessengerScreen() }
+
+                        // экраны мессенджера
+                        composable("messenger") { MessengerScreen(navController) }
+                        composable("create_chat") { CreateChatScreen(navController) }
+                        composable(
+                            "chat/{chatId}/{otherUserId}"
+                        ) { backStackEntry ->
+                            val chatId = backStackEntry.arguments?.getString("chatId")!!
+                            val otherUserId = backStackEntry.arguments?.getString("otherUserId")!!
+                            ChatScreen(chatId, otherUserId)
+                        }
                     }
                 }
             }
