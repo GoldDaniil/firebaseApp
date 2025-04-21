@@ -86,7 +86,6 @@ fun CenterScreen() {
                 .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
-            // Информация о центре
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -175,7 +174,6 @@ fun CenterScreen() {
                                     .collection("tasks").document(newTask.id)
                                     .set(newTask)
 
-                                // Очистка формы
                                 newTaskTitle = ""
                                 newTaskDescription = ""
                                 showAddTask = false

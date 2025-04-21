@@ -292,7 +292,6 @@ fun WelcomeScreen(navController: NavController) {
                     }
 
                     Spacer(Modifier.height(24.dp))
-                    // 🔥 ВСТАВКА: две кнопки
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly

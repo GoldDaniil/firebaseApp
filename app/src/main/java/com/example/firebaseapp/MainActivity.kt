@@ -23,7 +23,6 @@ class MainActivity : ComponentActivity() {
                 val auth = FirebaseAuth.getInstance()
                 val userState = remember { mutableStateOf(auth.currentUser) }
 
-                // Слушатель изменений авторизации
                 DisposableEffect(Unit) {
                     val listener = FirebaseAuth.AuthStateListener {
                         userState.value = it.currentUser

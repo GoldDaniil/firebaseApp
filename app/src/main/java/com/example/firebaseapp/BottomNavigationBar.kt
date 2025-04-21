@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Message  // Импортируем иконку для сообщений
+import androidx.compose.material.icons.filled.Message
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
