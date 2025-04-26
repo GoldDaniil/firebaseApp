@@ -18,47 +18,53 @@ fun CreateChatScreen(navController: NavHostController) {
     val firestore = FirebaseFirestore.getInstance()
     val currentUser = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
-    var otherUserId by remember { mutableStateOf("") }
+    var otherUserEmail by remember { mutableStateOf("") }
 
     Column(Modifier.padding(16.dp)) {
         OutlinedTextField(
-            value = otherUserId,
-            onValueChange = { otherUserId = it },
-            label = { Text("ID другого пользователя") },
+            value = otherUserEmail,
+            onValueChange = { otherUserEmail = it },
+            label = { Text("Email другого пользователя") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(Modifier.height(16.dp))
 
         Button(onClick = {
-            if (otherUserId.isNotBlank()) {
+            if (otherUserEmail.isNotBlank()) {
                 firestore.collection("users")
-                    .whereEqualTo("email", otherUserId)
+                    .whereEqualTo("email", otherUserEmail)
                     .get()
                     .addOnSuccessListener { documents ->
                         if (!documents.isEmpty) {
                             val otherUserDoc = documents.documents[0]
                             val otherUserUid = otherUserDoc.id
 
-                            val newChat = Chat(
-                                id = UUID.randomUUID().toString(),
-                                userIds = listOf(currentUser!!.uid, otherUserUid)
+                            val newChatId = UUID.randomUUID().toString()
+                            val newChat = hashMapOf(
+                                "id" to newChatId,
+                                "userIds" to listOf(currentUser!!.uid, otherUserUid)
                             )
-                            firestore.collection("chats").document(newChat.id)
+                            firestore.collection("chats")
+                                .document(newChatId)
                                 .set(newChat)
                                 .addOnSuccessListener {
                                     Toast.makeText(context, "Чат создан", Toast.LENGTH_SHORT).show()
                                     navController.popBackStack()
                                 }
+                                .addOnFailureListener {
+                                    Toast.makeText(context, "Ошибка создания чата", Toast.LENGTH_SHORT).show()
+                                }
                         } else {
                             Toast.makeText(context, "Пользователь не найден", Toast.LENGTH_SHORT).show()
                         }
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Ошибка поиска пользователя", Toast.LENGTH_SHORT).show()
                     }
             }
         }) {
             Text("Создать чат")
         }
-
     }
-
 }

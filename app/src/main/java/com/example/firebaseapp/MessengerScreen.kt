@@ -19,13 +19,16 @@ fun MessengerScreen(navController: NavHostController) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     var chats by remember { mutableStateOf<List<Chat>>(emptyList()) }
 
-    LaunchedEffect(Unit) {
-        firestore.collection("chats")
-            .whereArrayContains("userIds", currentUser!!.uid)
-            .addSnapshotListener { snapshot, _ ->
-                chats = snapshot?.documents?.mapNotNull { it.toObject(Chat::class.java) } ?: emptyList()
-            }
+    LaunchedEffect(currentUser?.uid) {
+        currentUser?.let { user ->
+            firestore.collection("chats")
+                .whereArrayContains("userIds", user.uid)
+                .addSnapshotListener { snapshot, _ ->
+                    chats = snapshot?.documents?.mapNotNull { it.toObject(Chat::class.java) } ?: emptyList()
+                }
+        }
     }
+
 
     Scaffold(
         topBar = {
