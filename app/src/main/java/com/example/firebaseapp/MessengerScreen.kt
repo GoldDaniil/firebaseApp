@@ -1,6 +1,5 @@
 package com.example.firebaseapp
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -13,6 +12,7 @@ import com.example.firebaseapp.data.Chat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessengerScreen(navController: NavHostController) {
     val firestore = FirebaseFirestore.getInstance()
@@ -27,32 +27,48 @@ fun MessengerScreen(navController: NavHostController) {
             }
     }
 
-    Column(Modifier.padding(16.dp)) {
-        Button(onClick = { navController.navigate("create_chat") }) {
-            Text("Создать чат")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Мессенджер") },
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { navController.navigate("create_chat") }) {
+                Text("+")
+            }
         }
-
-        Spacer(Modifier.height(16.dp))
-
-        if (chats.isEmpty()) {
-            Text("Нет чатов")
-        } else {
-            LazyColumn {
-                items(chats) { chat ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .clickable {
-                                // определяем собеседника
-                                val otherUserId = chat.userIds.first { it != currentUser!!.uid }
-                                navController.navigate("chat/${chat.id}/$otherUserId")
+    ) { padding ->
+        Column(modifier = Modifier
+            .padding(padding)
+            .padding(16.dp)
+        ) {
+            if (chats.isEmpty()) {
+                Text("Нет чатов", style = MaterialTheme.typography.bodyLarge)
+            } else {
+                LazyColumn {
+                    items(chats) { chat ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    val otherUserId = chat.userIds.first { it != currentUser!!.uid }
+                                    navController.navigate("chat/${chat.id}/$otherUserId")
+                                },
+                            shape = MaterialTheme.shapes.medium,
+                            elevation = CardDefaults.cardElevation(4.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    text = "Чат с: ${chat.userIds.first { it != currentUser!!.uid }}",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
                             }
-                    ) {
-                        Text(
-                            "Чат с пользователем: ${chat.userIds.first { it != currentUser!!.uid }}",
-                            modifier = Modifier.padding(16.dp)
-                        )
+                        }
                     }
                 }
             }
