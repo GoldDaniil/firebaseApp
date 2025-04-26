@@ -32,13 +32,17 @@ fun CreateChatScreen(navController: NavHostController) {
 
         Button(onClick = {
             if (otherUserId.isNotBlank()) {
-                // Проверка, существует ли пользователь
-                firestore.collection("users").document(otherUserId).get()
-                    .addOnSuccessListener { doc ->
-                        if (doc.exists()) {
+                firestore.collection("users")
+                    .whereEqualTo("email", otherUserId)
+                    .get()
+                    .addOnSuccessListener { documents ->
+                        if (!documents.isEmpty) {
+                            val otherUserDoc = documents.documents[0]
+                            val otherUserUid = otherUserDoc.id
+
                             val newChat = Chat(
                                 id = UUID.randomUUID().toString(),
-                                userIds = listOf(currentUser!!.uid, otherUserId)
+                                userIds = listOf(currentUser!!.uid, otherUserUid)
                             )
                             firestore.collection("chats").document(newChat.id)
                                 .set(newChat)
@@ -54,5 +58,7 @@ fun CreateChatScreen(navController: NavHostController) {
         }) {
             Text("Создать чат")
         }
+
     }
+
 }
