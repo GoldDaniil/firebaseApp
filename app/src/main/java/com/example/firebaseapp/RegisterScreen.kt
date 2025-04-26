@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -18,31 +20,69 @@ fun RegisterScreen(navController: NavController) {
     var password by rememberSaveable { mutableStateOf("") }
     val auth = FirebaseAuth.getInstance()
 
-    Column(Modifier.padding(16.dp)) {
-        Text(text = "Регистрация", style = MaterialTheme.typography.headlineMedium)
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Пароль") })
-        Spacer(modifier = Modifier.height(8.dp))
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(24.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Регистрация",
+                    style = MaterialTheme.typography.headlineLarge
+                )
 
-        Button(onClick = {
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(context, "Пожалуйста, заполните все поля", Toast.LENGTH_SHORT).show()
-                return@Button
-            }
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        navController.navigate("welcome") {
-                            popUpTo(0) { inclusive = true }
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Пароль") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Button(
+                    onClick = {
+                        if (email.isEmpty() || password.isEmpty()) {
+                            Toast.makeText(context, "Пожалуйста, заполните все поля", Toast.LENGTH_SHORT).show()
+                            return@Button
                         }
-                    } else {
-                        val errorMessage = task.exception?.localizedMessage ?: "Неизвестная ошибка"
-                        Toast.makeText(context, "Ошибка регистрации: $errorMessage", Toast.LENGTH_LONG).show()
-                    }
+
+                        auth.createUserWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                if (task.isSuccessful) {
+                                    navController.navigate("welcome") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                } else {
+                                    val errorMessage = task.exception?.localizedMessage ?: "Неизвестная ошибка"
+                                    Toast.makeText(context, "Ошибка регистрации: $errorMessage", Toast.LENGTH_LONG).show()
+                                }
+                            }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Зарегистрироваться")
                 }
-        }) {
-            Text("Зарегистрироваться")
+            }
         }
     }
+
 }
