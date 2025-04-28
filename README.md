@@ -23,6 +23,3 @@ allow read, write: if request.auth != null;
 }
 }
 }
-
-
-название заменить на Volunteer
