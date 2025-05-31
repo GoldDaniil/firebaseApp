@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.storage)
+    implementation("com.prof18.rssparser:rssparser:6.0.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -45,6 +45,9 @@ class MainActivity : ComponentActivity() {
                         composable("register") { RegisterScreen(navController) }
                         composable("welcome") { WelcomeScreen(navController) }
                         composable("center") { CenterScreen() }
+                        composable("news") {
+                            RssReaderScreen()
+                        }
 
                         // экраны мессенджера
                         composable("messenger") { MessengerScreen(navController) }

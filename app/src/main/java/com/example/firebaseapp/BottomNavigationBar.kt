@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Message
 import com.google.firebase.auth.FirebaseUser
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Article
 
 @Composable
 fun BottomNavigationBar(navController: NavController, user: FirebaseUser?) {
@@ -48,6 +50,13 @@ fun BottomNavigationBar(navController: NavController, user: FirebaseUser?) {
                 onClick = { navController.navigate("welcome") },
                 icon = { Icon(Icons.Default.Person, contentDescription = "Profile") }
             )
+            NavigationBarItem(
+                label = { Text("Новости") },
+                selected = currentDestination == "news",
+                onClick = { navController.navigate("news") },
+                icon = { Icon(Icons.Default.Article, contentDescription = "Новости") }
+            )
+
         }
     }
 }
