@@ -1,6 +1,7 @@
 package com.example.firebaseapp
 
 import android.util.Log
+import android.widget.Button
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,11 +26,12 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-
+import androidx.navigation.NavController
 
 @Composable
-fun CenterScreen() {
+fun CenterScreen(navController: NavController) {
     val user = FirebaseAuth.getInstance().currentUser
     val firestore = FirebaseFirestore.getInstance()
 
@@ -120,6 +122,8 @@ fun CenterScreen() {
                         Text(if (isUserListVisible) "Скрыть пользователей" else "Показать пользователей")
                     }
 
+
+
                     if (isUserListVisible) {
                         Spacer(Modifier.height(16.dp))
                         if (usersList.isEmpty()) {
@@ -131,7 +135,11 @@ fun CenterScreen() {
                             }
                         }
                     }
-
+                    Button(onClick = {
+                        navController.navigate("map")
+                    }) {
+                        Text("Карта 🗺️ ")
+                    }
                     Spacer(Modifier.height(16.dp))
                     Row {
                         Button(onClick = { showCompleted = false }) {
