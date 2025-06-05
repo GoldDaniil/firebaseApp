@@ -10,6 +10,7 @@ import androidx.navigation.compose.*
 import com.example.firebaseapp.ui.theme.FirebaseAppTheme
 import com.google.firebase.FirebaseApp
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseapp.ui.MapScreen
 import com.google.firebase.auth.FirebaseAuth
 
@@ -45,7 +46,7 @@ class MainActivity : ComponentActivity() {
                         composable("login") { LoginScreen(navController) }
                         composable("register") { RegisterScreen(navController) }
                         composable("welcome") { WelcomeScreen(navController) }
-                        composable("center") { CenterScreen(navController ) }
+                        composable("center") { CenterScreen(navController = navController) }
                         composable ("map"){ MapScreen()}
 
                         // экраны мессенджера

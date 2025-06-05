@@ -39,6 +39,7 @@ fun CenterScreen(navController: NavController) {
     var usersCount by remember { mutableStateOf(0) }
     var usersList by remember { mutableStateOf<List<UserProfile>>(emptyList()) }
     var tasks by remember { mutableStateOf<List<Task>>(emptyList()) }
+    var completedTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
 
     var isUserListVisible by remember { mutableStateOf(false) }
     var showCompleted by remember { mutableStateOf(false) }
@@ -76,6 +77,15 @@ fun CenterScreen(navController: NavController) {
                                     .addSnapshotListener { snapshot, _ ->
                                         if (snapshot != null) {
                                             tasks = snapshot.documents.mapNotNull {
+                                                it.toObject(Task::class.java)
+                                            }
+                                        }
+                                    }
+                                firestore.collection("centers").document(centerId)
+                                    .collection("completedTasks") //подписываемся на изменения выполненных задач
+                                    .addSnapshotListener { snapshot, _ ->
+                                        if (snapshot != null) {
+                                            completedTasks = snapshot.documents.mapNotNull {
                                                 it.toObject(Task::class.java)
                                             }
                                         }
@@ -151,12 +161,13 @@ fun CenterScreen(navController: NavController) {
                         }
                     }
 
-                    Spacer(Modifier.height(16.dp))
-                    val filteredTasks = tasks.filter { it.isCompleted == showCompleted }
-                    if (filteredTasks.isEmpty()) {
+                    Spacer(Modifier.height(16.dp)) //если задачи выполнены, то нужно показать completedTasks
+                                                  //если showCompleted false, то показываем tasks
+                    val tasksToshow = if (showCompleted) completedTasks else tasks
+                    if (tasksToshow.isEmpty()) {
                         Text("Задач пока нет.")
                     } else {
-                        filteredTasks.forEach { task ->
+                        tasksToshow.forEach { task ->
                             TaskCard(
                                 centerId = center!!.id,
                                 task = task,
@@ -231,7 +242,6 @@ fun TaskCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            // Добавляем строку с состоянием задачи
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -251,10 +261,8 @@ fun TaskCard(
                     }
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
             Text(task.description)
-
             when {
                 task.isCompleted -> {
                     Spacer(Modifier.height(8.dp))
@@ -263,13 +271,11 @@ fun TaskCard(
                 }
                 !showCompleted -> {
                     Spacer(Modifier.height(8.dp))
-
                     if (task.isSolutionSent) {
                         Column {
-                            // Показываем отправленное решение
                             Text(
                                 "Ваше решение: ${task.solution}",
-                                fontStyle =     FontStyle.Italic,
+                                fontStyle = FontStyle.Italic,
                                 color = Color.Gray
                             )
                             Spacer(Modifier.height(8.dp))
@@ -278,15 +284,25 @@ fun TaskCard(
                                     val completedTask = task.copy(isCompleted = true)
                                     firestore.collection("centers")
                                         .document(centerId)
-                                        .collection("tasks")
+                                        .collection("completedTasks")
                                         .document(task.id)
                                         .set(completedTask)
                                         .addOnSuccessListener {
-                                            Toast.makeText(context, "Задача выполнена!", Toast.LENGTH_SHORT).show()
-                                            onTaskUpdated(completedTask)
+                                            firestore.collection("centers")
+                                                .document(centerId)
+                                                .collection("tasks")
+                                                .document(task.id)
+                                                .delete()
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(context, "Задача выполнена!", Toast.LENGTH_SHORT).show()
+                                                    onTaskUpdated(completedTask)
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    Toast.makeText(context, "Ошибка удаления: ${e.message}", Toast.LENGTH_SHORT).show()
+                                                }
                                         }
-                                        .addOnFailureListener {
-                                            Toast.makeText(context, "Ошибка", Toast.LENGTH_SHORT).show()
+                                        .addOnFailureListener { e ->
+                                            Toast.makeText(context, "Ошибка добавления: ${e.message}", Toast.LENGTH_SHORT).show()
                                         }
                                 },
                                 colors = ButtonDefaults.buttonColors(
@@ -322,6 +338,9 @@ fun TaskCard(
                                             onTaskUpdated(updatedTask)
                                             isSolutionFieldVisible = false
                                         }
+                                        .addOnFailureListener { e ->
+                                            Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
                                 }
                             }) {
                                 Text("Отправить решение")
@@ -337,3 +356,4 @@ fun TaskCard(
         }
     }
 }
+
