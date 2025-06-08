@@ -12,14 +12,28 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.firebaseapp.ViewModel.LoginState
+import com.example.firebaseapp.ViewModel.RegisterState
+import com.example.firebaseapp.ViewModel.RegisterViewModel
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     val context = LocalContext.current
+    val vm: RegisterViewModel = viewModel()
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    val auth = FirebaseAuth.getInstance()
+    val registerState by vm.registerState.collectAsState()
 
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterState.Error) {
+            val message = (registerState as LoginState.Error).message
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+        if (registerState is RegisterState.Success) {
+            navController.navigate("welcome")
+        }
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -60,22 +74,7 @@ fun RegisterScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-                        if (email.isEmpty() || password.isEmpty()) {
-                            Toast.makeText(context, "Пожалуйста, заполните все поля", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-
-                        auth.createUserWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    navController.navigate("welcome") {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                } else {
-                                    val errorMessage = task.exception?.localizedMessage ?: "Неизвестная ошибка"
-                                    Toast.makeText(context, "Ошибка регистрации: $errorMessage", Toast.LENGTH_LONG).show()
-                                }
-                            }
+                       vm.register(email,password)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {

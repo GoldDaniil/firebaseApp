@@ -12,13 +12,27 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.firebaseapp.ViewModel.LoginState
+import com.example.firebaseapp.ViewModel.LoginViewModel
 
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
+    val vm: LoginViewModel = viewModel()
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    val auth = FirebaseAuth.getInstance()
+    val loginState by vm.loginState.collectAsState()
+
+    LaunchedEffect(loginState) {
+        if (loginState is LoginState.Error) {
+            val message = (loginState as LoginState.Error).message
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+        if (loginState is LoginState.Success) {
+            navController.navigate("welcome")
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -60,21 +74,7 @@ fun LoginScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-                        if (email.isEmpty() || password.isEmpty()) {
-                            Toast.makeText(context, "Пожалуйста, заполните все поля", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-
-                        auth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                if (task.isSuccessful) {
-                                    navController.navigate("welcome") {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                } else {
-                                    Toast.makeText(context, "Ошибка входа", Toast.LENGTH_SHORT).show()
-                                }
-                            }
+                        vm.login(email,password)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
