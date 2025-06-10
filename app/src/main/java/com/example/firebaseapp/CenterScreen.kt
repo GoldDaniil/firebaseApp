@@ -1,7 +1,5 @@
 package com.example.firebaseapp
 
-import android.util.Log
-import android.widget.Button
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,86 +14,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.firebaseapp.data.Task
-import com.example.firebaseapp.data.UserProfile
-import com.example.firebaseapp.data.VolunteerCenter
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import java.util.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.firebaseapp.ViewModel.CenterViewModel
 
 @Composable
 fun CenterScreen(navController: NavController) {
-    val user = FirebaseAuth.getInstance().currentUser
-    val firestore = FirebaseFirestore.getInstance()
 
-    var center by remember { mutableStateOf<VolunteerCenter?>(null) }
-    var usersCount by remember { mutableStateOf(0) }
-    var usersList by remember { mutableStateOf<List<UserProfile>>(emptyList()) }
-    var tasks by remember { mutableStateOf<List<Task>>(emptyList()) }
-    var completedTasks by remember { mutableStateOf<List<Task>>(emptyList()) }
-
-    var isUserListVisible by remember { mutableStateOf(false) }
-    var showCompleted by remember { mutableStateOf(false) }
-    var showAddTask by remember { mutableStateOf(false) }
-
-    var newTaskTitle by remember { mutableStateOf("") }
-    var newTaskDescription by remember { mutableStateOf("") }
-
+    val vm: CenterViewModel = viewModel()
+    var center = vm.center.collectAsState()
+    var usersCount = vm.usersCount.collectAsState()
+    var usersList = vm.usersList.collectAsState()
+    var tasks = vm.tasks.collectAsState()
+    var completedTasks = vm.completedTasks.collectAsState()
+    var isUserListVisible = vm.isUserListVisible.collectAsState()
+    var showCompleted = vm.showCompleted.collectAsState()
+    var showAddTask = vm.showAddTaskForm.collectAsState()
+    var newTaskTitle = vm.newTaskTitle.collectAsState()
+    var newTaskDescription = vm.newTaskDescription.collectAsState()
     val scrollState = rememberScrollState()
-
-    LaunchedEffect(Unit) {
-        user?.let {
-            firestore.collection("users").document(it.uid).get()
-                .addOnSuccessListener { userDoc ->
-                    val centerId = userDoc.getString("centerId")
-                    if (!centerId.isNullOrEmpty()) {
-                        firestore.collection("centers").document(centerId)
-                            .get()
-                            .addOnSuccessListener { centerDoc ->
-                                center = centerDoc.toObject(VolunteerCenter::class.java)
-
-                                firestore.collection("users")
-                                    .whereEqualTo("centerId", centerId)
-                                    .addSnapshotListener { snapshot, _ ->
-                                        if (snapshot != null) {
-                                            usersList = snapshot.documents.mapNotNull {
-                                                it.toObject(UserProfile::class.java)
-                                            }
-                                            usersCount = usersList.size
-                                        }
-                                    }
-
-                                firestore.collection("centers").document(centerId)
-                                    .collection("tasks")
-                                    .addSnapshotListener { snapshot, _ ->
-                                        if (snapshot != null) {
-                                            tasks = snapshot.documents.mapNotNull {
-                                                it.toObject(Task::class.java)
-                                            }
-                                        }
-                                    }
-                                firestore.collection("centers").document(centerId)
-                                    .collection("completedTasks") //подписываемся на изменения выполненных задач
-                                    .addSnapshotListener { snapshot, _ ->
-                                        if (snapshot != null) {
-                                            completedTasks = snapshot.documents.mapNotNull {
-                                                it.toObject(Task::class.java)
-                                            }
-                                        }
-                                    }
-                            }
-                    }
-                }
-        }
-    }
-
-    fun updateTask(updatedTask: Task) {
-        tasks = tasks.map { if (it.id == updatedTask.id) updatedTask else it }
-    }
 
     if (center == null) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -116,102 +57,76 @@ fun CenterScreen(navController: NavController) {
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("Название: ${center!!.name}", style = MaterialTheme.typography.headlineMedium)
+                    Text("Название: ${center.value?.name}", style = MaterialTheme.typography.headlineMedium)
                     Spacer(Modifier.height(8.dp))
-                    Text("Дата основания: ${center!!.foundationDate}")
+                    Text("Дата основания: ${center.value?.foundationDate}")
                     Spacer(Modifier.height(8.dp))
-                    Text("Описание: ${center!!.description}")
+                    Text("Описание: ${center.value?.description}")
                     Spacer(Modifier.height(8.dp))
-                    Text("Количество пользователей: $usersCount")
-
+                    Text("Количество пользователей: ${usersCount.value}")
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = { isUserListVisible = !isUserListVisible }) {
-                        Text(if (isUserListVisible) "Скрыть пользователей" else "Показать пользователей")
+                    Button(onClick = { vm.changeUserList() }) {
+                        Text(if (isUserListVisible.value) "Скрыть пользователей" else "Показать пользователей")
                     }
-
-
-
-                    if (isUserListVisible) {
+                    if (isUserListVisible.value) {
                         Spacer(Modifier.height(16.dp))
-                        if (usersList.isEmpty()) {
+                        if (usersList.value.isEmpty()) {
                             Text("Нет пользователей.")
                         } else {
-                            usersList.forEach { user ->
+                            usersList.value.forEach { user ->
                                 Text("Почта: ${user.email}, Ник: ${user.nickname}, Статус: ${if (user.isActive) "Активный" else "Неактивный"}")
                                 Spacer(Modifier.height(8.dp))
                             }
                         }
                     }
-                    Button(onClick = {
-                        navController.navigate("map")
-                    }) {
-                        Text("Карта 🗺️ ")
+                    Button(onClick = { navController.navigate("map") }) {
+                        Text("Карта 🗺️")
                     }
                     Spacer(Modifier.height(16.dp))
                     Row {
-                        Button(onClick = { showCompleted = false }) {
+                        Button(onClick = { vm.setShowCompleted(false) }) {
                             Text("Задачи")
                         }
                         Spacer(Modifier.width(8.dp))
-                        Button(onClick = { showCompleted = true }) {
+                        Button(onClick = { vm.setShowCompleted(true) }) {
                             Text("Выполненные")
                         }
                     }
-
-                    Spacer(Modifier.height(16.dp)) //если задачи выполнены, то нужно показать completedTasks
-                                                  //если showCompleted false, то показываем tasks
-                    val tasksToshow = if (showCompleted) completedTasks else tasks
-                    if (tasksToshow.isEmpty()) {
+                    Spacer(Modifier.height(16.dp))
+                    val tasksToShow = if (showCompleted.value) completedTasks else tasks
+                    if (tasksToShow.value.isEmpty()) {
                         Text("Задач пока нет.")
                     } else {
-                        tasksToshow.forEach { task ->
+                        tasksToShow.value.forEach { task ->
                             TaskCard(
-                                centerId = center!!.id,
+                                centerId = center.value?.id ?: "",
                                 task = task,
-                                firestore = firestore,
-                                showCompleted = showCompleted,
-                                onTaskUpdated = { updatedTask -> updateTask(updatedTask) }
+                                showCompleted = showCompleted.value,
+                                viewModel = vm
                             )
                         }
                     }
-
                     Spacer(Modifier.height(24.dp))
-                    Button(onClick = { showAddTask = !showAddTask }) {
-                        Text(if (showAddTask) "Скрыть форму" else "Добавить задачу")
+                    Button(onClick = { vm.changeAddTaskForm() }) {
+                        Text(if (showAddTask.value) "Скрыть форму" else "Добавить задачу")
                     }
-
-                    if (showAddTask) {
+                    if (showAddTask.value) {
                         Spacer(Modifier.height(16.dp))
                         OutlinedTextField(
-                            value = newTaskTitle,
-                            onValueChange = { newTaskTitle = it },
+                            value = newTaskTitle.value,
+                            onValueChange = { vm.setTitle(it) },
                             label = { Text("Введите название") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
                         OutlinedTextField(
-                            value = newTaskDescription,
-                            onValueChange = { newTaskDescription = it },
+                            value = newTaskDescription.value,
+                            onValueChange = { vm.set_new_description(it) },
                             label = { Text("Введите описание") },
                             modifier = Modifier.fillMaxWidth()
                         )
                         Spacer(Modifier.height(8.dp))
-                        Button(onClick = {
-                            if (newTaskTitle.isNotBlank() && newTaskDescription.isNotBlank()) {
-                                val newTask = Task(
-                                    id = UUID.randomUUID().toString(),
-                                    title = newTaskTitle,
-                                    description = newTaskDescription
-                                )
-                                firestore.collection("centers").document(center!!.id)
-                                    .collection("tasks").document(newTask.id)
-                                    .set(newTask)
-
-                                newTaskTitle = ""
-                                newTaskDescription = ""
-                                showAddTask = false
-                            }
-                        }) {
+                        Button(onClick = { vm.publishNewTask(center.value?.id ?: "") }) {
                             Text("Опубликовать")
                         }
                     }
@@ -220,13 +135,13 @@ fun CenterScreen(navController: NavController) {
         }
     }
 }
+
 @Composable
 fun TaskCard(
     centerId: String,
     task: Task,
-    firestore: FirebaseFirestore,
+    viewModel: CenterViewModel,
     showCompleted: Boolean,
-    onTaskUpdated: (Task) -> Unit
 ) {
     var solutionText by remember { mutableStateOf("") }
     var isSolutionFieldVisible by remember { mutableStateOf(false) }
@@ -242,7 +157,7 @@ fun TaskCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("📌 ${task.title}", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.width(8.dp))
-                if (task.isSolutionSent && !task.isCompleted) {
+                if (task.isSolutionSent && task.isCompleted) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
@@ -277,31 +192,7 @@ fun TaskCard(
                             )
                             Spacer(Modifier.height(8.dp))
                             Button(
-                                onClick = {
-                                    val completedTask = task.copy(isCompleted = true)
-                                    firestore.collection("centers")
-                                        .document(centerId)
-                                        .collection("completedTasks")
-                                        .document(task.id)
-                                        .set(completedTask)
-                                        .addOnSuccessListener {
-                                            firestore.collection("centers")
-                                                .document(centerId)
-                                                .collection("tasks")
-                                                .document(task.id)
-                                                .delete()
-                                                .addOnSuccessListener {
-                                                    Toast.makeText(context, "Задача выполнена!", Toast.LENGTH_SHORT).show()
-                                                    onTaskUpdated(completedTask)
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    Toast.makeText(context, "Ошибка удаления: ${e.message}", Toast.LENGTH_SHORT).show()
-                                                }
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Toast.makeText(context, "Ошибка добавления: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                },
+                                onClick = { viewModel.completeTask(centerId, task) },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = Color(0xFF4CAF50),
                                     contentColor = Color.White
@@ -321,23 +212,15 @@ fun TaskCard(
                             Spacer(Modifier.height(8.dp))
                             Button(onClick = {
                                 if (solutionText.isNotBlank()) {
+                                    Toast.makeText(context, "Решение отправлено", Toast.LENGTH_SHORT).show()
+
                                     val updatedTask = task.copy(
                                         solution = solutionText,
                                         isSolutionSent = true
                                     )
-                                    firestore.collection("centers")
-                                        .document(centerId)
-                                        .collection("tasks")
-                                        .document(task.id)
-                                        .set(updatedTask)
-                                        .addOnSuccessListener {
-                                            Toast.makeText(context, "Решение отправлено!", Toast.LENGTH_SHORT).show()
-                                            onTaskUpdated(updatedTask)
-                                            isSolutionFieldVisible = false
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Toast.makeText(context, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
+
+                                    viewModel.sendTaskSolution(centerId, updatedTask, solutionText)
+                                    isSolutionFieldVisible = false
                                 }
                             }) {
                                 Text("Отправить решение")
@@ -353,4 +236,3 @@ fun TaskCard(
         }
     }
 }
-
