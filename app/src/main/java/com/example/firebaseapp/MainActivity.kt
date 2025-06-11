@@ -18,7 +18,6 @@ import com.example.firebaseapp.ui.screens.LoginScreen
 import com.example.firebaseapp.ui.screens.MapScreen
 import com.example.firebaseapp.ui.screens.MessengerScreen
 import com.example.firebaseapp.ui.screens.RegisterScreen
-import com.example.firebaseapp.ui.screens.WelcomeScreen
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
