@@ -144,8 +144,8 @@ fun TaskCard(
     viewModel: CenterViewModel,
     showCompleted: Boolean,
 ) {
-    var solutionText by rememberSaveable { mutableStateOf("") }
-    var isSolutionFieldVisible by rememberSaveable { mutableStateOf(false) }
+    var solutionText by remember { mutableStateOf("") }
+    var isSolutionFieldVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Card(
