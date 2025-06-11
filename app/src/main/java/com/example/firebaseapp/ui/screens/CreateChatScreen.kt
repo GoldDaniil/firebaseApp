@@ -1,4 +1,4 @@
-package com.example.firebaseapp
+package com.example.firebaseapp.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -8,7 +8,6 @@ import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.example.firebaseapp.data.Chat
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.*

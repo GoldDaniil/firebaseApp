@@ -1,4 +1,4 @@
-package com.example.firebaseapp.ui
+package com.example.firebaseapp.ui.screens
 
 import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize

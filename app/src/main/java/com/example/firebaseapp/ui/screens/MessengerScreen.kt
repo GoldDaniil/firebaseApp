@@ -1,4 +1,4 @@
-package com.example.firebaseapp
+package com.example.firebaseapp.ui.screens
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

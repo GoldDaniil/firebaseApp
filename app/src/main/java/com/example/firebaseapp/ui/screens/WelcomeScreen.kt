@@ -1,6 +1,5 @@
 package com.example.firebaseapp
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -15,14 +14,12 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.firebaseapp.data.VolunteerCenter
-import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 
@@ -133,121 +130,121 @@ fun WelcomeScreen(navController: NavController) {
 
                 Spacer(Modifier.height(16.dp))
 
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Почта", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
-                    Text(profile!!.email, style = MaterialTheme.typography.bodyLarge)
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Почта", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                        Text(profile!!.email, style = MaterialTheme.typography.bodyLarge)
+                    }
                 }
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editableNickname,
-                    onValueChange = { editableNickname = it },
-                    label = { Text("Никнейм") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = editableBio,
-                    onValueChange = { editableBio = it },
-                    label = { Text("О себе") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                var expanded by remember { mutableStateOf(false) }
-                val statusOptions = listOf("Активный", "Неактивный")
-
-                Text("Статус", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
+                if (isEditing) {
                     OutlinedTextField(
-                        value = editableStatus,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Статус") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
+                        value = editableNickname,
+                        onValueChange = { editableNickname = it },
+                        label = { Text("Никнейм") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editableBio,
+                        onValueChange = { editableBio = it },
+                        label = { Text("О себе") },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
-                    ExposedDropdownMenu(
+                    var expanded by remember { mutableStateOf(false) }
+                    val statusOptions = listOf("Активный", "Неактивный")
+
+                    Text("Статус", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    ExposedDropdownMenuBox(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onExpandedChange = { expanded = !expanded }
                     ) {
-                        statusOptions.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    editableStatus = selectionOption
-                                    expanded = false
-                                }
+                        OutlinedTextField(
+                            value = editableStatus,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Статус") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                            },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            statusOptions.forEach { selectionOption ->
+                                DropdownMenuItem(
+                                    text = { Text(selectionOption) },
+                                    onClick = {
+                                        editableStatus = selectionOption
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    Text("Выберите волонтёрский центр:", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                    centers.forEach { center ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedCenter = center }
+                                .padding(8.dp)
+                        ) {
+                            RadioButton(
+                                selected = selectedCenter?.id == center.id,
+                                onClick = { selectedCenter = center }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(center.name)
+                        }
+                    }
+
+                    Spacer(Modifier.height(16.dp))
+                    Text("Выберите аватар:", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf("black", "blue", "reg", "yellowjpg").forEach { avatarName ->
+                            val resId = when (avatarName) {
+                                "black" -> R.drawable.black
+                                "blue" -> R.drawable.blue
+                                "reg" -> R.drawable.reg
+                                "yellowjpg" -> R.drawable.yellowjpg
+                                else -> R.drawable.black
+                            }
+
+                            Image(
+                                painter = painterResource(id = resId),
+                                contentDescription = avatarName,
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .border(
+                                        2.dp,
+                                        if (selectedAvatar == avatarName) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                        CircleShape
+                                    )
+                                    .clickable { selectedAvatar = avatarName }
                             )
                         }
                     }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                Text("Выберите волонтёрский центр:", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                centers.forEach { center ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedCenter = center }
-                            .padding(8.dp)
-                    ) {
-                        RadioButton(
-                            selected = selectedCenter?.id == center.id,
-                            onClick = { selectedCenter = center }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(center.name)
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-                Text("Выберите аватар:", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    listOf("black", "blue", "reg", "yellowjpg").forEach { avatarName ->
-                        val resId = when (avatarName) {
-                            "black" -> R.drawable.black
-                            "blue" -> R.drawable.blue
-                            "reg" -> R.drawable.reg
-                            "yellowjpg" -> R.drawable.yellowjpg
-                            else -> R.drawable.black
-                        }
-
-                        Image(
-                            painter = painterResource(id = resId),
-                            contentDescription = avatarName,
-                            modifier = Modifier
-                                .size(64.dp)
-                                .border(
-                                    2.dp,
-                                    if (selectedAvatar == avatarName) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                    CircleShape
-                                )
-                                .clickable { selectedAvatar = avatarName }
-                        )
-                    }
-                }
 
                     Spacer(Modifier.height(24.dp))
 

@@ -1,4 +1,4 @@
-package com.example.firebaseapp
+package com.example.firebaseapp.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -9,31 +9,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.firebaseapp.ViewModel.LoginState
-import com.example.firebaseapp.ViewModel.LoginViewModel
+import com.example.firebaseapp.ViewModel.RegisterState
+import com.example.firebaseapp.ViewModel.RegisterViewModel
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController) {
     val context = LocalContext.current
-    val vm: LoginViewModel = viewModel()
+    val vm: RegisterViewModel = viewModel()
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
-    val loginState by vm.loginState.collectAsState()
+    val registerState by vm.registerState.collectAsState()
 
-    LaunchedEffect(loginState) {
-        if (loginState is LoginState.Error) {
-            val message = (loginState as LoginState.Error).message
+    LaunchedEffect(registerState) {
+        if (registerState is RegisterState.Error) {
+            val message = (registerState as LoginState.Error).message
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
-        if (loginState is LoginState.Success) {
+        if (registerState is RegisterState.Success) {
             navController.navigate("welcome")
         }
     }
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -53,7 +52,7 @@ fun LoginScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Вход",
+                    text = "Регистрация",
                     style = MaterialTheme.typography.headlineLarge
                 )
 
@@ -74,18 +73,11 @@ fun LoginScreen(navController: NavController) {
 
                 Button(
                     onClick = {
-                        vm.login(email,password)
+                       vm.register(email,password)
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Войти")
-                }
-
-                TextButton(
-                    onClick = { navController.navigate("register") },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text("Нет аккаунта? Зарегистрироваться")
+                    Text("Зарегистрироваться")
                 }
             }
         }

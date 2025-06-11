@@ -1,4 +1,4 @@
-package com.example.firebaseapp
+package com.example.firebaseapp.ui.screens
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
