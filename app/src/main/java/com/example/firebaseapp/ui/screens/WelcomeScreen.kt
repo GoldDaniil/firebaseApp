@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.runtime.saveable.rememberSaveable
 
 data class UserProfile(
     val email: String = "",
@@ -47,15 +48,15 @@ fun WelcomeScreen(navController: NavController) {
         return
     }
 
-    var profile by remember { mutableStateOf<UserProfile?>(null) }
-    var centers by remember { mutableStateOf<List<VolunteerCenter>>(emptyList()) }
-    var isEditing by remember { mutableStateOf(false) }
-    var selectedCenter by remember { mutableStateOf<VolunteerCenter?>(null) }
+    var profile by rememberSaveable { mutableStateOf<UserProfile?>(null) }
+    var centers by rememberSaveable { mutableStateOf<List<VolunteerCenter>>(emptyList()) }
+    var isEditing by rememberSaveable { mutableStateOf(false) }
+    var selectedCenter by rememberSaveable { mutableStateOf<VolunteerCenter?>(null) }
 
-    var editableNickname by remember { mutableStateOf("") }
-    var editableBio by remember { mutableStateOf("") }
-    var editableStatus by remember { mutableStateOf("") }
-    var selectedAvatar by remember { mutableStateOf("black") }
+    var editableNickname by rememberSaveable { mutableStateOf("") }
+    var editableBio by rememberSaveable { mutableStateOf("") }
+    var editableStatus by rememberSaveable { mutableStateOf("") }
+    var selectedAvatar by rememberSaveable { mutableStateOf("black") }
 
     val scrollState = rememberScrollState()
 
