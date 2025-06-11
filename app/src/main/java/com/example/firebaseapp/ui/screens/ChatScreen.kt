@@ -106,9 +106,9 @@ fun ChatScreen(chatId: String, otherUserId: String) {
                 onClick = {
                     if (messageText.isNotBlank()) {
                         val newMessage = ChatMessage(
-                            id = UUID.randomUUID().toString(),
-                            senderId = currentUser!!.uid,
-                            message = messageText
+                            id = UUID.randomUUID().toString(), // уникальный ID
+                            senderId = currentUser!!.uid, // отправитель — текущий пользователь
+                            message = messageText // текст сообщения
                         )
                         firestore.collection("chats")
                             .document(chatId)
@@ -116,7 +116,7 @@ fun ChatScreen(chatId: String, otherUserId: String) {
                             .document(newMessage.id)
                             .set(newMessage)
                             .addOnSuccessListener {
-                                messageText = ""
+                                messageText = "" //чистим
                             }
                             .addOnFailureListener {
                                 Toast.makeText(context, "Ошибка отправки", Toast.LENGTH_SHORT).show()
